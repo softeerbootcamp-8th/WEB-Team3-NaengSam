@@ -1,6 +1,6 @@
 package com.naengsam.quick.domain.upload.controller;
 
-import com.naengsam.quick.domain.upload.dto.PresignedUrlResponseDto;
+import com.naengsam.quick.domain.upload.dto.PresignedUrlDto;
 import com.naengsam.quick.domain.upload.entity.UploadPurpose;
 import com.naengsam.quick.domain.upload.exception.UploadErrorCode;
 import com.naengsam.quick.domain.upload.service.UploadSessionService;
@@ -38,7 +38,7 @@ public class UploadController {
     @ApiErrorCodes(enumClass = AuthErrorCode.class, codes = {"UNAUTHORIZED"})
     @ApiErrorCodes(enumClass = UploadErrorCode.class,
             codes = {"NO_FILE_ATTACHED", "INVALID_FILE_NAME", "UNSUPPORTED_FILE_TYPE"})
-    public PresignedUrlResponseDto getPresignedUrl(@RequestParam String fileName, @RequestParam UploadPurpose purpose,
+    public PresignedUrlDto getPresignedUrl(@RequestParam String fileName, @RequestParam UploadPurpose purpose,
             @RequestParam(required = false) UUID resourceId, @LoginUser UUID boormiId) {
         validateFileName(fileName);
 

@@ -1,6 +1,6 @@
 package com.naengsam.quick.domain.upload.service;
 
-import com.naengsam.quick.domain.upload.dto.PresignedUrlResponseDto;
+import com.naengsam.quick.domain.upload.dto.PresignedUrlDto;
 import com.naengsam.quick.domain.upload.entity.UploadPurpose;
 import com.naengsam.quick.domain.upload.entity.UploadSession;
 import com.naengsam.quick.domain.upload.exception.UploadErrorCode;
@@ -43,7 +43,7 @@ public class UploadSessionService {
     }
 
     @Transactional
-    public PresignedUrlResponseDto issue(UploadPurpose purpose, UUID boormiId, UUID resourceId, String fileName) {
+    public PresignedUrlDto issue(UploadPurpose purpose, UUID boormiId, UUID resourceId, String fileName) {
         if (purpose.isResourceScopeRequired() && resourceId == null) {
             throw new BusinessException(UploadErrorCode.MISSING_RESOURCE_ID);
         }
@@ -51,7 +51,7 @@ public class UploadSessionService {
         String key = buildKey(purpose, fileName);
         String url = s3PresignService.generateUploadUrl(key);
         uploadSessionRepository.save(UploadSession.create(purpose, boormiId, resourceId, key));
-        return new PresignedUrlResponseDto(url, key);
+        return new PresignedUrlDto(url, key);
     }
 
     /**

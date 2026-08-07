@@ -1,6 +1,6 @@
 package com.naengsam.quick.domain.address.service;
 
-import com.naengsam.quick.domain.address.dto.KakaoDirectionsResponseDto;
+import com.naengsam.quick.domain.address.dto.KakaoDirectionsDto;
 import com.naengsam.quick.domain.matching.dto.GeoPoint;
 import com.naengsam.quick.global.code.GeneralErrorCode;
 import com.naengsam.quick.global.exception.BusinessException;
@@ -45,7 +45,7 @@ public class KakaoDirectionsService {
     /**
      * 출발지/도착지 좌표로 도보 경로를 조회해 총 거리(m)와 소요시간(s)이 담긴 요약을 반환한다.
      */
-    public KakaoDirectionsResponseDto.Properties getRoute(GeoPoint origin, GeoPoint destination) {
+    public KakaoDirectionsDto.Properties getRoute(GeoPoint origin, GeoPoint destination) {
 
         URI uri = UriComponentsBuilder.fromUriString("https://dapi.kakao.com/v2/routing/walk")
                 .queryParam("start_x", origin.longitude())
@@ -55,13 +55,13 @@ public class KakaoDirectionsService {
                 .build()
                 .toUri();
 
-        KakaoDirectionsResponseDto response;
+        KakaoDirectionsDto response;
         try {
             response = restClient.get()
                     .uri(uri)
                     .header("Authorization", "KakaoAK " + restApiKey)
                     .retrieve()
-                    .body(KakaoDirectionsResponseDto.class);
+                    .body(KakaoDirectionsDto.class);
         } catch (ResourceAccessException e) {
             log.warn("카카오 도보 길찾기 API 응답 지연", e);
             throw new BusinessException(GeneralErrorCode.EXTERNAL_SERVICE_TIMEOUT);

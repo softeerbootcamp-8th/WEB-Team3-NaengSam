@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.naengsam.quick.domain.address.dto.AddressRequestDto;
-import com.naengsam.quick.domain.address.dto.AddressResponseDto;
-import com.naengsam.quick.domain.address.dto.CoordinatesResponseDto;
+import com.naengsam.quick.domain.address.dto.AddressRequest;
+import com.naengsam.quick.domain.address.dto.AddressDto;
+import com.naengsam.quick.domain.address.dto.CoordinatesDto;
 import com.naengsam.quick.domain.address.entity.Address;
 import com.naengsam.quick.domain.address.repository.AddressRepository;
 import java.math.BigDecimal;
@@ -34,18 +34,18 @@ class AddressServiceTest {
     @Test
     void 주소를_저장하면_좌표가_계산되어_반영된_주소가_저장되고_생성된_id가_반환된다() {
         UUID boormiId = UUID.randomUUID();
-        AddressRequestDto requestDto = new AddressRequestDto(
+        AddressRequest requestDto = new AddressRequest(
                 "우리집",
                 "서울시 강남구",
                 "101동 202호"
         );
-        CoordinatesResponseDto.RoadAddress roadAddress =
-                new CoordinatesResponseDto.RoadAddress(
+        CoordinatesDto.RoadAddress roadAddress =
+                new CoordinatesDto.RoadAddress(
                         null, null, null, null, null, null, null, null, null,
                         "127.123456", "37.123456"
                 );
-        CoordinatesResponseDto coordinatesResponseDto =
-                new CoordinatesResponseDto(List.of(new CoordinatesResponseDto.Document(roadAddress)));
+        CoordinatesDto coordinatesResponseDto =
+                new CoordinatesDto(List.of(new CoordinatesDto.Document(roadAddress)));
         when(coordinatesService.getCoordinates(requestDto.addressLine1()))
                 .thenReturn(coordinatesResponseDto);
         when(addressRepository.save(any(Address.class)))
@@ -80,9 +80,9 @@ class AddressServiceTest {
                 .build();
         when(addressRepository.findAllByBoormiId(boormiId)).thenReturn(List.of(address));
 
-        List<AddressResponseDto> result = addressService.findAll(boormiId);
+        List<AddressDto> result = addressService.findAll(boormiId);
 
-        assertThat(result).containsExactly(new AddressResponseDto(
+        assertThat(result).containsExactly(new AddressDto(
                 address.getAddressAlias(),
                 address.getAddressLine1(),
                 address.getAddressLine2(),

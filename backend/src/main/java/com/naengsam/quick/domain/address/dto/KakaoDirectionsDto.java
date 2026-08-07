@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * 카카오맵 도보 길찾기 API 응답. 요금 계산에 필요한 총 거리/소요시간만 매핑하고 나머지는 무시한다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record KakaoDirectionsResponseDto(
+public record KakaoDirectionsDto(
         Route route,
         String status
 ) {

@@ -8,7 +8,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import com.naengsam.quick.domain.upload.dto.PresignedUrlResponseDto;
+import com.naengsam.quick.domain.upload.dto.PresignedUrlDto;
 import com.naengsam.quick.domain.upload.entity.UploadPurpose;
 import com.naengsam.quick.domain.upload.entity.UploadSession;
 import com.naengsam.quick.domain.upload.exception.UploadErrorCode;
@@ -51,7 +51,7 @@ class UploadSessionServiceTest {
         UUID boormiId = UUID.randomUUID();
         given(s3PresignService.generateUploadUrl(any())).willReturn("https://example.com/upload");
 
-        PresignedUrlResponseDto result = uploadSessionService.issue(UploadPurpose.DREAMI_ID_CARD, boormiId, null,
+        PresignedUrlDto result = uploadSessionService.issue(UploadPurpose.DREAMI_ID_CARD, boormiId, null,
                 "idcard.png");
 
         assertThat(result.key()).startsWith("uploads/DREAMI_ID_CARD/");

@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.naengsam.quick.domain.upload.dto.PresignedUrlResponseDto;
+import com.naengsam.quick.domain.upload.dto.PresignedUrlDto;
 import com.naengsam.quick.domain.upload.entity.UploadPurpose;
 import com.naengsam.quick.domain.upload.service.UploadSessionService;
 import com.naengsam.quick.global.exception.GlobalExceptionHandler;
@@ -73,7 +73,7 @@ class UploadControllerTest {
         UUID boormiId = UUID.randomUUID();
         String key = "uploads/DREAMI_ID_CARD/aaa-idcard.png";
         when(uploadSessionService.issue(UploadPurpose.DREAMI_ID_CARD, boormiId, null, "idcard.png"))
-                .thenReturn(new PresignedUrlResponseDto("https://example.com/upload", key));
+                .thenReturn(new PresignedUrlDto("https://example.com/upload", key));
 
         mockMvc.perform(get("/api/v1/upload/url")
                         .param("fileName", "idcard.png")

@@ -8,8 +8,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
-import com.naengsam.quick.domain.address.dto.CoordinatesResponseDto;
-import com.naengsam.quick.domain.address.dto.KakaoDirectionsResponseDto;
+import com.naengsam.quick.domain.address.dto.CoordinatesDto;
+import com.naengsam.quick.domain.address.dto.KakaoDirectionsDto;
 import com.naengsam.quick.domain.address.service.CoordinatesService;
 import com.naengsam.quick.domain.address.service.KakaoDirectionsService;
 import com.naengsam.quick.domain.boormi.dto.ExpectedValueDto;
@@ -101,12 +101,12 @@ BoormiServiceTest {
     }
 
     // x=경도(longitude), y=위도(latitude)
-    private static CoordinatesResponseDto coordinatesAt(String longitudeX, String latitudeY) {
-        CoordinatesResponseDto.RoadAddress roadAddress =
-                new CoordinatesResponseDto.RoadAddress(
+    private static CoordinatesDto coordinatesAt(String longitudeX, String latitudeY) {
+        CoordinatesDto.RoadAddress roadAddress =
+                new CoordinatesDto.RoadAddress(
                         null, null, null, null, null, null, null, null, null,
                         longitudeX, latitudeY);
-        return new CoordinatesResponseDto(List.of(new CoordinatesResponseDto.Document(roadAddress)));
+        return new CoordinatesDto(List.of(new CoordinatesDto.Document(roadAddress)));
     }
 
     @Test
@@ -114,7 +114,7 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 강남구")).willReturn(coordinatesAt("127.0", "37.5"));
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
-                .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 900));
+                .willReturn(new KakaoDirectionsDto.Properties(5000, 900));
 
         ExpectedValueDto result = boormiService.expectedValue(request(ItemCd.DOCUMENT));
 
@@ -128,7 +128,7 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 강남구")).willReturn(coordinatesAt("127.0", "37.5"));
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
-                .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 900));
+                .willReturn(new KakaoDirectionsDto.Properties(5000, 900));
 
         ExpectedValueDto result = boormiService.expectedValue(request(ItemCd.PACKAGE));
 
@@ -140,7 +140,7 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 강남구")).willReturn(coordinatesAt("127.0", "37.5"));
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
-                .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 901));
+                .willReturn(new KakaoDirectionsDto.Properties(5000, 901));
 
         ExpectedValueDto result = boormiService.expectedValue(request(ItemCd.DOCUMENT));
 
@@ -152,7 +152,7 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 강남구")).willReturn(coordinatesAt("127.0", "37.5"));
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
-                .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 900));
+                .willReturn(new KakaoDirectionsDto.Properties(5000, 900));
 
         boormiService.expectedValue(request(ItemCd.DOCUMENT));
 
@@ -169,7 +169,7 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 강남구")).willReturn(coordinatesAt("127.0", "37.5"));
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
-                .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 900));
+                .willReturn(new KakaoDirectionsDto.Properties(5000, 900));
 
         boormiService.subscribeOrder(orderRequest(), boormiId);
 
@@ -205,7 +205,7 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         // 거리 2000m, PACKAGE(배율 1.5) → (1500/100*100 + 500/100*160 + 3000)=5300 → ×1.5 = 7950원, 660초 → 11분
         given(kakaoDirectionsService.getRoute(any(), any()))
-                .willReturn(new KakaoDirectionsResponseDto.Properties(2000, 660));
+                .willReturn(new KakaoDirectionsDto.Properties(2000, 660));
 
         OrderRequest packageOrder = new OrderRequest("서울시 강남구", "101동", "서울시 서초구", "202동",
                 "노트북", ItemCd.PACKAGE, "http://img", "파손주의", "문 앞에 두세요");
@@ -267,7 +267,7 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 강남구")).willReturn(coordinatesAt("127.0", "37.5"));
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
-                .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 900));
+                .willReturn(new KakaoDirectionsDto.Properties(5000, 900));
         given(matchingService.isOpenGroupExists(any())).willReturn(true);
 
         Throwable thrown = catchThrowable(() -> boormiService.subscribeOrder(orderRequest(), boormiId));
@@ -294,7 +294,7 @@ BoormiServiceTest {
     @Test
     void 좌표변환_결과가_비면_EXTERNAL_SERVICE_ERROR() {
         given(coordinatesService.getCoordinates(anyString()))
-                .willReturn(new CoordinatesResponseDto(List.of()));
+                .willReturn(new CoordinatesDto(List.of()));
 
         Throwable thrown = catchThrowable(() -> boormiService.expectedValue(request(ItemCd.DOCUMENT)));
 

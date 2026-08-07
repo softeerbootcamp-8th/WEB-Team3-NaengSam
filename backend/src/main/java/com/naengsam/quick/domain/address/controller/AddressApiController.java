@@ -1,8 +1,8 @@
 package com.naengsam.quick.domain.address.controller;
 
-import com.naengsam.quick.domain.address.dto.AddressApiRequestDto;
-import com.naengsam.quick.domain.address.dto.AddressCoordinatesResponseDto;
-import com.naengsam.quick.domain.address.dto.CoordinatesResponseDto;
+import com.naengsam.quick.domain.address.dto.AddressApiRequest;
+import com.naengsam.quick.domain.address.dto.AddressCoordinatesDto;
+import com.naengsam.quick.domain.address.dto.CoordinatesDto;
 import com.naengsam.quick.domain.address.service.CoordinatesService;
 import com.naengsam.quick.global.code.GeneralErrorCode;
 import com.naengsam.quick.global.swagger.ApiErrorCodes;
@@ -30,14 +30,14 @@ public class AddressApiController {
     @PostMapping("/place")
     @ApiResponse(responseCode = "200", description = "요청에 성공했습니다.")
     @ApiErrorCodes(enumClass = GeneralErrorCode.class, codes = {"EXTERNAL_SERVICE_ERROR", "EXTERNAL_SERVICE_TIMEOUT"})
-    public AddressCoordinatesResponseDto getCoordinates(@Valid @RequestBody AddressApiRequestDto requestDto) {
+    public AddressCoordinatesDto getCoordinates(@Valid @RequestBody AddressApiRequest requestDto) {
         // 카카오의 도로명주소 -> 위도 경도로 변환 api 사용
-        CoordinatesResponseDto originCoordinates = coordinatesService.getCoordinates(requestDto.origin());
-        CoordinatesResponseDto destinationCoordinates = coordinatesService.getCoordinates(requestDto.destination());
+        CoordinatesDto originCoordinates = coordinatesService.getCoordinates(requestDto.origin());
+        CoordinatesDto destinationCoordinates = coordinatesService.getCoordinates(requestDto.destination());
 
         // 결제 완료 전까지는 아무것도 저장하지 않고, 계산된 좌표만 클라이언트에 돌려준다.
         // 클라이언트가 이 값을 나머지 주문 정보와 함께 들고 있다가 결제 완료 시점에 한 번에 제출한다.
-        return new AddressCoordinatesResponseDto(
+        return new AddressCoordinatesDto(
                 new BigDecimal(originCoordinates.documents().getFirst().roadAddress().y()).setScale(8, RoundingMode.HALF_UP),
                 new BigDecimal(originCoordinates.documents().getFirst().roadAddress().x()).setScale(8, RoundingMode.HALF_UP),
                 new BigDecimal(destinationCoordinates.documents().getFirst().roadAddress().y()).setScale(8, RoundingMode.HALF_UP),

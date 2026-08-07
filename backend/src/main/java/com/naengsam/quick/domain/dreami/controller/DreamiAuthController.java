@@ -1,6 +1,6 @@
 package com.naengsam.quick.domain.dreami.controller;
 
-import com.naengsam.quick.domain.dreami.dto.DreamiAuthRequestDto;
+import com.naengsam.quick.domain.dreami.dto.DreamiAuthRequest;
 import com.naengsam.quick.domain.dreami.exception.DreamiErrorCode;
 import com.naengsam.quick.domain.dreami.service.DreamiService;
 import com.naengsam.quick.domain.upload.entity.UploadPurpose;
@@ -42,7 +42,7 @@ public class DreamiAuthController {
     @ApiErrorCodes(enumClass = DreamiErrorCode.class, codes = {"ALREADY_APPROVED"})
     @ApiErrorCodes(enumClass = UploadErrorCode.class, codes = {"FILE_NOT_FOUND", "KEY_OWNER_MISMATCH",
             "STORAGE_UPLOAD_FAILED"})
-    public void verifyUploadedDocuments(@Valid @RequestBody DreamiAuthRequestDto requestDto,
+    public void verifyUploadedDocuments(@Valid @RequestBody DreamiAuthRequest requestDto,
                                         @LoginUser UUID boormiId) {
         // 승인 완료됐을 때는 해당 api 호출해서 값 덮어쓰지 못하게 해야함
         // reviewing, requested, rejected일 때는 다시 제출 허용

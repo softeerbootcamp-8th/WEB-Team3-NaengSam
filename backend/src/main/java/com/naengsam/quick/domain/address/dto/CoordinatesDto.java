@@ -10,7 +10,7 @@ import tools.jackson.databind.annotation.JsonNaming;
  */
 @JsonIgnoreProperties(ignoreUnknown = true) // 정의하지 않은 메타 데이터나 다른 필드는 무시
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record CoordinatesResponseDto(
+public record CoordinatesDto(
         List<Document> documents
 ) {
     /**

@@ -1,8 +1,8 @@
 package com.naengsam.quick.domain.boormi.service;
 
 import com.naengsam.quick.domain.address.dto.Addresses;
-import com.naengsam.quick.domain.address.dto.CoordinatesResponseDto;
-import com.naengsam.quick.domain.address.dto.KakaoDirectionsResponseDto;
+import com.naengsam.quick.domain.address.dto.CoordinatesDto;
+import com.naengsam.quick.domain.address.dto.KakaoDirectionsDto;
 import com.naengsam.quick.domain.address.service.CoordinatesService;
 import com.naengsam.quick.domain.address.service.KakaoDirectionsService;
 import com.naengsam.quick.domain.boormi.dto.ExpectedValueDto;
@@ -212,7 +212,7 @@ public class BoormiService {
      * 초과 구간은 100m당 160원으로 과금하고 물건 유형 배율을 곱한다.
      */
     private Charge calculatePrice(GeoPoint origin, GeoPoint destination, ItemCd itemCd) {
-        KakaoDirectionsResponseDto.Properties route = kakaoDirectionsService.getRoute(origin, destination);
+        KakaoDirectionsDto.Properties route = kakaoDirectionsService.getRoute(origin, destination);
 
         //비용 계산
         int baseDistance = Math.min(route.totalDistance(), BASE_SECTION);
@@ -250,13 +250,13 @@ public class BoormiService {
     }
 
     private GeoPoint toGeoPoint(String roadAddress) {
-        CoordinatesResponseDto coordinates = coordinatesService.getCoordinates(roadAddress);
-        List<CoordinatesResponseDto.Document> documents = coordinates.documents();
+        CoordinatesDto coordinates = coordinatesService.getCoordinates(roadAddress);
+        List<CoordinatesDto.Document> documents = coordinates.documents();
         if (documents.isEmpty()) {
             throw new BusinessException(GeneralErrorCode.EXTERNAL_SERVICE_ERROR);
         }
 
-        CoordinatesResponseDto.RoadAddress address = documents.getFirst().roadAddress();
+        CoordinatesDto.RoadAddress address = documents.getFirst().roadAddress();
 
         // x=경도, y=위도 → GeoPoint(latitude, longitude) 순서에 맞춰 매핑
         return new GeoPoint(new BigDecimal(address.y()), new BigDecimal(address.x()));
