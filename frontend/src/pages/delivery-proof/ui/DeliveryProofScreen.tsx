@@ -13,7 +13,7 @@ import { ProofUpload } from "./ProofUpload";
  * ?mode=photo 면 사진 인증, 기본은 수령인 서명 인증입니다(UI 전용).
  *
  * 실 백엔드 모드: `?orderId=&intent=pickup|finish` 가 있으면 /delivery-track 에서 넘어온 실제 인증이다.
- * 실제 사진 파일을 골라 presign(GET /upload/url) → dev-storage PUT → 전이 API(pickup-finish/finish)를
+ * 실제 사진 파일을 골라 presign(GET /upload/url) → S3 PUT → 전이 API(pickup-finish/finish)를
  * 순서대로 호출한다. pickup 은 배달중(track 배송중)으로, finish 는 배달 완료(complete)로 이어진다.
  */
 export function DeliveryProofScreen() {
@@ -114,9 +114,11 @@ const PROOF_CONFIG: Record<
 };
 
 /**
- * 실제 인증(픽업/전달 완료): 파일 선택 → presign → dev-storage PUT → 전이 API.
- * 세 호출 모두 공통 axios 인스턴스로 직접 호출한다(생성 클라이언트의 upload/delivery 시그니처가
- * 아직 낡아 purpose/resourceId·photoKey 바디를 실을 수 없기 때문 — 임시 테스트 흐름 한정).
+ * 실제 인증(픽업/전달 완료): 파일 선택은 미리보기만 하고, "픽업 완료 · 사진 첨부" 버튼 클릭 한 번에
+ * presign → S3 PUT → 전이 API를 순서대로 실행한다(드리미 본인인증 화면과 동일한 흐름).
+ * presign/전이 API는 공통 axios 인스턴스로 호출하지만(생성 클라이언트의 upload/delivery 시그니처가
+ * 아직 낡아 purpose/resourceId·photoKey 바디를 실을 수 없기 때문 — 임시 테스트 흐름 한정), S3 PUT은
+ * 발급받은 presigned URL로 직접 fetch한다(공통 인스턴스를 타면 host가 앱 자신의 origin으로 바뀜).
  */
 function RealDeliveryProof({
   orderId,
@@ -144,12 +146,15 @@ function RealDeliveryProof({
       const { url, key } = presign.data?.result ?? {};
       if (!url || !key) throw new Error("presign 발급에 실패했습니다.");
 
-      // 2) 발급 URL 로 실제 업로드. 로컬 dev-storage 는 절대 URL 이라 동일 출처 경로로 바꿔
-      //    Vite 프록시를 태운다(CORS 회피). PUT 바디는 원본 파일 바이트.
-      const putPath = new URL(url).pathname + new URL(url).search;
-      await axiosInstance.put(putPath, file, {
+      // 2) 발급받은 presigned URL로 S3에 직접 PUT(공통 axios 인스턴스 미사용 — 절대 URL 그대로
+      //    호출해야 실제 호스트로 간다. path만 떼어 앱 origin으로 보내면 dev-storage에서만 우연히
+      //    맞고 실 S3에서는 엉뚱한 곳(CloudFront 등)으로 요청이 나가 깨진다).
+      const putRes = await fetch(url, {
+        method: "PUT",
+        body: file,
         headers: { "Content-Type": file.type || "application/octet-stream" },
       });
+      if (!putRes.ok) throw new Error("사진 업로드에 실패했습니다.");
 
       // 3) 전이 API 호출 — photoKey 를 실어 실제 상태 전이(DB 반영).
       await axiosInstance.post(cfg.endpoint(orderId), { photoKey: key });
