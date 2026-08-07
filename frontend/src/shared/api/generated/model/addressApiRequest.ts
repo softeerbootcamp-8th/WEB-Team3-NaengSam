@@ -5,11 +5,13 @@
  * OpenAPI spec version: v0
  */
 
-export interface AddressRequestDto {
+export interface AddressApiRequest {
   /** @minLength 1 */
-  addressAlias: string;
+  origin: string;
   /** @minLength 1 */
-  addressLine1: string;
+  originDetail: string;
   /** @minLength 1 */
-  addressLine2: string;
+  destination: string;
+  /** @minLength 1 */
+  destinationDetail: string;
 }

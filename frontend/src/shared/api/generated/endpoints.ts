@@ -5,15 +5,15 @@
  * OpenAPI spec version: v0
  */
 import type {
-  AddressApiRequestDto,
-  AddressRequestDto,
+  AddressApiRequest,
+  AddressRequest,
   CancelByAdmin200,
   CancelByBoormi200,
   CancelByDreami200,
   ConfirmDreamiRequest,
   DeliveryPhotoRequest,
   DevSubscribe200,
-  DreamiAuthRequestDto,
+  DreamiAuthRequest,
   DreamiLocationRequest,
   DreamiOnlineRequest,
   ExpectedValue200,
@@ -169,12 +169,12 @@ const login = (
  * @summary 드리미가 본인 인증 자료 제대로 제출했는지 확인
  */
 const verifyUploadedDocuments = (
-    dreamiAuthRequestDto: DreamiAuthRequestDto,
+    dreamiAuthRequest: DreamiAuthRequest,
  options?: SecondParameter<typeof customInstance<void>>,) => {
       return customInstance<void>(
       {url: `/api/v1/dreami/verification`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: dreamiAuthRequestDto
+      data: dreamiAuthRequest
     },
       options);
     }
@@ -625,12 +625,12 @@ const findAll = (
  * @summary 배송지 저장
  */
 const saveAddress = (
-    addressRequestDto: AddressRequestDto,
+    addressRequest: AddressRequest,
  options?: SecondParameter<typeof customInstance<SaveAddress200>>,) => {
       return customInstance<SaveAddress200>(
       {url: `/api/v1/address`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: addressRequestDto
+      data: addressRequest
     },
       options);
     }
@@ -640,12 +640,12 @@ const saveAddress = (
  * @summary 배송지 좌표 변환
  */
 const getCoordinates = (
-    addressApiRequestDto: AddressApiRequestDto,
+    addressApiRequest: AddressApiRequest,
  options?: SecondParameter<typeof customInstance<GetCoordinates200>>,) => {
       return customInstance<GetCoordinates200>(
       {url: `/api/v1/address/place`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: addressApiRequestDto
+      data: addressApiRequest
     },
       options);
     }

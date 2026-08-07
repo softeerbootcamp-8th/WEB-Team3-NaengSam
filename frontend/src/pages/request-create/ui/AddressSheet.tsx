@@ -7,7 +7,7 @@ import {
   TextField,
   TopBar,
 } from "@/shared/ui";
-import { api, isApiError, type AddressResponseDto } from "@/shared/api";
+import { api, isApiError, type AddressDto } from "@/shared/api";
 import { loadDaumPostcode } from "@/shared/lib";
 import type { Meeting } from "./types";
 
@@ -48,7 +48,7 @@ export function AddressSheet({
 
   // 저장된 주소 보기(findAll) 관련 상태.
   const [savedView, setSavedView] = useState(false);
-  const [savedList, setSavedList] = useState<AddressResponseDto[]>([]);
+  const [savedList, setSavedList] = useState<AddressDto[]>([]);
   const [savedLoading, setSavedLoading] = useState(false);
   const [savedError, setSavedError] = useState<string | null>(null);
 
@@ -97,7 +97,7 @@ export function AddressSheet({
   };
 
   // 저장된 주소를 골라 폼에 채운다.
-  const selectSaved = (a: AddressResponseDto) => {
+  const selectSaved = (a: AddressDto) => {
     setRoad(a.addressLine1 ?? "");
     setDetail(a.addressLine2 ?? "");
     setSavedView(false);

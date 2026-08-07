@@ -4,11 +4,11 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { PresignedUrlResponseDto } from './presignedUrlResponseDto';
+import type { PresignedUrlDto } from './presignedUrlDto';
 
 export type GetPresignedUrl200 = {
   isSuccess?: boolean;
   code?: string;
   message?: string;
-  result?: PresignedUrlResponseDto;
+  result?: PresignedUrlDto;
 };

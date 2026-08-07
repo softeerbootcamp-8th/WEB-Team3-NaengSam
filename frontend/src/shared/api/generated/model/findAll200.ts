@@ -4,11 +4,11 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { AddressResponseDto } from './addressResponseDto';
+import type { AddressDto } from './addressDto';
 
 export type FindAll200 = {
   isSuccess?: boolean;
   code?: string;
   message?: string;
-  result?: AddressResponseDto[];
+  result?: AddressDto[];
 };

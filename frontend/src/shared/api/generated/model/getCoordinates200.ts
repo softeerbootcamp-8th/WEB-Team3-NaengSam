@@ -4,11 +4,11 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
-import type { AddressCoordinatesResponseDto } from './addressCoordinatesResponseDto';
+import type { AddressCoordinatesDto } from './addressCoordinatesDto';
 
 export type GetCoordinates200 = {
   isSuccess?: boolean;
   code?: string;
   message?: string;
-  result?: AddressCoordinatesResponseDto;
+  result?: AddressCoordinatesDto;
 };

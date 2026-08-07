@@ -5,9 +5,11 @@
  * OpenAPI spec version: v0
  */
 
-export interface DreamiAuthRequestDto {
+export interface AddressRequest {
   /** @minLength 1 */
-  idCardKey: string;
+  addressAlias: string;
   /** @minLength 1 */
-  criminalRecordKey: string;
+  addressLine1: string;
+  /** @minLength 1 */
+  addressLine2: string;
 }

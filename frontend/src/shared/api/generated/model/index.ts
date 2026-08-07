@@ -5,10 +5,10 @@
  * OpenAPI spec version: v0
  */
 
-export * from './addressApiRequestDto';
-export * from './addressCoordinatesResponseDto';
-export * from './addressRequestDto';
-export * from './addressResponseDto';
+export * from './addressApiRequest';
+export * from './addressCoordinatesDto';
+export * from './addressDto';
+export * from './addressRequest';
 export * from './boormiOrdersResponse';
 export * from './cancelByAdmin200';
 export * from './cancelByBoormi200';
@@ -21,7 +21,7 @@ export * from './deliveryPhotoRequest';
 export * from './deliveryStatusResponseDto';
 export * from './deliveryStatusResponseDtoStatus';
 export * from './devSubscribe200';
-export * from './dreamiAuthRequestDto';
+export * from './dreamiAuthRequest';
 export * from './dreamiDashboardDto';
 export * from './dreamiLocationRequest';
 export * from './dreamiOnlineRequest';
@@ -74,7 +74,7 @@ export * from './orderSummaryDtoItemCd';
 export * from './orderSummaryDtoOrderCd';
 export * from './orderView';
 export * from './pickupFinishByDreami200';
-export * from './presignedUrlResponseDto';
+export * from './presignedUrlDto';
 export * from './putParams';
 export * from './registerDreami200';
 export * from './rejectDreamiRequest';

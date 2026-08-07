@@ -5,7 +5,7 @@
  * OpenAPI spec version: v0
  */
 
-export interface AddressResponseDto {
+export interface AddressDto {
   addressAlias?: string;
   addressLine1?: string;
   addressLine2?: string;

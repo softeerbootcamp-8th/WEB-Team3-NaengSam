@@ -5,7 +5,7 @@
  * OpenAPI spec version: v0
  */
 
-export interface PresignedUrlResponseDto {
+export interface PresignedUrlDto {
   url?: string;
   key?: string;
 }

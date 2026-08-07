@@ -5,7 +5,7 @@
  * OpenAPI spec version: v0
  */
 
-export interface AddressCoordinatesResponseDto {
+export interface AddressCoordinatesDto {
   originLatitude?: number;
   originLongitude?: number;
   destinationLatitude?: number;
