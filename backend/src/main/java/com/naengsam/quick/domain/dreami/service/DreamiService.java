@@ -14,6 +14,7 @@ import com.naengsam.quick.domain.dreami.repository.DreamiRequestDeniedDetailsRep
 import com.naengsam.quick.domain.matching.dto.GeoPoint;
 import com.naengsam.quick.domain.matching.dto.NearbyOrderDto;
 import com.naengsam.quick.domain.matching.dto.NearbyOrderRequest;
+import com.naengsam.quick.domain.matching.event.DreamiAcceptedEvent;
 import com.naengsam.quick.domain.matching.exception.MatchingErrorCode;
 import com.naengsam.quick.domain.matching.service.MatchingService;
 import com.naengsam.quick.domain.matching.service.NearbyOrderFinder;
@@ -34,6 +35,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,6 +50,7 @@ public class DreamiService {
     private final NearbyOrderFinder nearbyOrderFinder;
     private final MatchingService matchingService;
     private final MoneyTxRepository moneyTxRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 저장 직전에 락 걸린 조회로 승인 여부를 다시 확인한다. {@code assertNotAlreadyApproved}로 미리 확인했더라도, 그 뒤 저장
@@ -93,7 +96,8 @@ public class DreamiService {
     }
 
     /**
-     * 드리미가 제안을 수락한다. 매칭엔진에 반영하기 전에 주문을 PENDING_BOORMI_CONFIRMATION으로 전이해 DB에도 반영한다
+     * 드리미가 제안을 수락한다. 매칭엔진에 반영하기 전에 주문을 PENDING_BOORMI_CONFIRMATION으로 전이해 DB에도 반영한다. 매칭엔진 제출은 이 트랜잭션이 커밋된 뒤에
+     * 일어난다.
      */
     @Transactional
     public void acceptOffer(UUID offerId, UUID dreamiId) {
@@ -106,7 +110,10 @@ public class DreamiService {
                 .orElseThrow(() -> new BusinessException(OrderErrorCode.ORDER_NOT_FOUND));
 
         order.markPendingBoormiConfirmation();
-        matchingService.acceptByDreami(offerId);
+
+        // 엔진은 수락 즉시 부르미에게 확인 팝업을 보내고, 부르미의 확정은 주문이 PENDING_BOORMI_CONFIRMATION 인지
+        // 검사하므로 커밋 후에 제출해야 한다. 커밋 후 처리는 MatchingService 의 리스너가 담당한다.
+        eventPublisher.publishEvent(new DreamiAcceptedEvent(offerId));
     }
 
     /**

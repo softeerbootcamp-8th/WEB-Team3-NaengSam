@@ -18,6 +18,10 @@ import com.naengsam.quick.domain.boormi.dto.OrderRequest;
 import com.naengsam.quick.domain.boormi.entity.ItemCd;
 import com.naengsam.quick.domain.boormi.repository.BoormiRepository;
 import com.naengsam.quick.domain.matching.dto.GeoPoint;
+import com.naengsam.quick.domain.matching.event.BoormiConfirmedEvent;
+import com.naengsam.quick.domain.matching.event.BoormiRejectedDreamiEvent;
+import com.naengsam.quick.domain.matching.event.MatchingStartRequestedEvent;
+import com.naengsam.quick.domain.matching.event.OrderCancelledByBoormiEvent;
 import com.naengsam.quick.domain.matching.exception.MatchingErrorCode;
 import com.naengsam.quick.domain.matching.repository.MatchingRepository;
 import com.naengsam.quick.domain.matching.service.MatchingService;
@@ -39,6 +43,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -68,6 +73,9 @@ BoormiServiceTest {
 
     @Mock
     private MatchingRepository matchingRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private BoormiService boormiService;
@@ -156,13 +164,12 @@ BoormiServiceTest {
     }
 
     @Test
-    void 주문접수_요청필드로_주문을_생성해_저장하고_결제와_매칭을_시작한다() {
+    void 주문접수_요청필드로_주문을_생성해_저장하고_결제하며_커밋후_처리용_매칭시작_이벤트를_발행한다() {
         UUID boormiId = UUID.randomUUID();
         given(coordinatesService.getCoordinates("서울시 강남구")).willReturn(coordinatesAt("127.0", "37.5"));
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
                 .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 900));
-        given(matchingService.startMatching(any())).willReturn(true);
 
         boormiService.subscribeOrder(orderRequest(), boormiId);
 
@@ -171,7 +178,8 @@ BoormiServiceTest {
         // 결제는 저장된 주문과 같은 orderId, 서버가 재계산한 요금으로 이뤄져야 한다
         then(paymentService).should()
                 .payWithPoint(boormiId, captor.getValue().getOrderId(), 10100L);
-        then(matchingService).should().startMatching(captor.getValue());
+        then(matchingService).should(never()).startMatching(any()); // 커밋 전에는 엔진에 직접 제출하지 않는다
+        then(eventPublisher).should().publishEvent(new MatchingStartRequestedEvent(captor.getValue()));
 
         Orders saved = captor.getValue();
         assertThat(saved.getBoormiId()).isEqualTo(boormiId);
@@ -198,7 +206,6 @@ BoormiServiceTest {
         // 거리 2000m, PACKAGE(배율 1.5) → (1500/100*100 + 500/100*160 + 3000)=5300 → ×1.5 = 7950원, 660초 → 11분
         given(kakaoDirectionsService.getRoute(any(), any()))
                 .willReturn(new KakaoDirectionsResponseDto.Properties(2000, 660));
-        given(matchingService.startMatching(any())).willReturn(true);
 
         OrderRequest packageOrder = new OrderRequest("서울시 강남구", "101동", "서울시 서초구", "202동",
                 "노트북", ItemCd.PACKAGE, "http://img", "파손주의", "문 앞에 두세요");
@@ -261,12 +268,13 @@ BoormiServiceTest {
         given(coordinatesService.getCoordinates("서울시 서초구")).willReturn(coordinatesAt("127.1", "37.6"));
         given(kakaoDirectionsService.getRoute(any(), any()))
                 .willReturn(new KakaoDirectionsResponseDto.Properties(5000, 900));
-        given(matchingService.startMatching(any())).willReturn(false);
+        given(matchingService.isOpenGroupExists(any())).willReturn(true);
 
         Throwable thrown = catchThrowable(() -> boormiService.subscribeOrder(orderRequest(), boormiId));
 
         assertThat(thrown).isInstanceOf(BusinessException.class);
         assertThat(((BusinessException) thrown).getErrorCode()).isEqualTo(GeneralErrorCode.CONFLICT);
+        then(eventPublisher).should(never()).publishEvent(any(MatchingStartRequestedEvent.class));
     }
 
     @Test
@@ -315,7 +323,7 @@ BoormiServiceTest {
                 .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND);
         then(orderService).should(never()).cancel(any(Orders.class), any());
         then(paymentService).should(never()).refundByPoint(any());
-        then(matchingService).should(never()).cancelOrderByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(OrderCancelledByBoormiEvent.class));
     }
 
     @Test
@@ -331,7 +339,7 @@ BoormiServiceTest {
                 .isEqualTo(OrderErrorCode.NOT_ORDER_OWNER);
         then(orderService).should(never()).cancel(any(Orders.class), any());
         then(paymentService).should(never()).refundByPoint(any());
-        then(matchingService).should(never()).cancelOrderByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(OrderCancelledByBoormiEvent.class));
     }
 
     @Test
@@ -347,11 +355,11 @@ BoormiServiceTest {
                 .isEqualTo(OrderErrorCode.CANNOT_CANCEL_AFTER_PICKUP);
         then(orderService).should(never()).cancel(any(Orders.class), any());
         then(paymentService).should(never()).refundByPoint(any());
-        then(matchingService).should(never()).cancelOrderByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(OrderCancelledByBoormiEvent.class));
     }
 
     @Test
-    void 취소_정상이면_주문취소와_포인트환불과_매칭취소를_호출한다() {
+    void 취소_정상이면_주문취소와_포인트환불후_커밋후_처리용_이벤트를_발행한다() {
         UUID boormiId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
         Orders order = order(boormiId, OrderCd.MATCHING);
@@ -361,7 +369,8 @@ BoormiServiceTest {
 
         then(orderService).should().cancel(order, CancelerCd.BOORMI);
         then(paymentService).should().refundByPoint(orderId);
-        then(matchingService).should().cancelOrderByBoormi(orderId);
+        then(matchingService).should(never()).cancelOrderByBoormi(any()); // 커밋 전에는 엔진에 직접 제출하지 않는다
+        then(eventPublisher).should().publishEvent(new OrderCancelledByBoormiEvent(orderId));
     }
 
     private static Orders confirmableOrder(UUID boormiId, UUID dreamiId, OrderCd orderCd) {
@@ -371,7 +380,7 @@ BoormiServiceTest {
     }
 
     @Test
-    void 확정_정상이면_dreamiId를_채우고_IN_PROGRESS_전이하며_MATCHING을_저장한다() {
+    void 확정_정상이면_dreamiId를_채우고_IN_PROGRESS_전이하며_커밋후_처리용_이벤트를_발행한다() {
         UUID boormiId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
         UUID offerId = UUID.randomUUID();
@@ -385,7 +394,8 @@ BoormiServiceTest {
         assertThat(order.getOrderCd()).isEqualTo(OrderCd.IN_PROGRESS);
         assertThat(order.getDreamiId()).isEqualTo(dreamiId);
         then(matchingRepository).should().save(any());
-        then(matchingService).should().acceptByBoormi(offerId);
+        then(matchingService).should(never()).acceptByBoormi(any()); // 커밋 전에는 엔진에 직접 제출하지 않는다
+        then(eventPublisher).should().publishEvent(new BoormiConfirmedEvent(offerId));
     }
 
     @Test
@@ -401,7 +411,7 @@ BoormiServiceTest {
 
         assertThat(((BusinessException) thrown).getErrorCode())
                 .isEqualTo(OrderErrorCode.NOT_ORDER_OWNER);
-        then(matchingService).should(never()).acceptByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(BoormiConfirmedEvent.class));
     }
 
     @Test
@@ -416,7 +426,7 @@ BoormiServiceTest {
 
         assertThat(((BusinessException) thrown).getErrorCode())
                 .isEqualTo(OrderErrorCode.INVALID_DREAMI_CONFIRMATION);
-        then(matchingService).should(never()).acceptByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(BoormiConfirmedEvent.class));
     }
 
     @Test
@@ -434,7 +444,7 @@ BoormiServiceTest {
         assertThat(((BusinessException) thrown).getErrorCode())
                 .isEqualTo(OrderErrorCode.NO_DREAMI_TO_CONFIRM);
         then(matchingRepository).should(never()).save(any());
-        then(matchingService).should(never()).acceptByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(BoormiConfirmedEvent.class));
     }
 
     @Test
@@ -451,7 +461,8 @@ BoormiServiceTest {
 
         assertThat(order.getOrderCd()).isEqualTo(OrderCd.MATCHING);
         assertThat(order.getDreamiId()).isNull();
-        then(matchingService).should().rejectByBoormi(offerId);
+        then(matchingService).should(never()).rejectByBoormi(any()); // 커밋 전에는 엔진에 직접 제출하지 않는다
+        then(eventPublisher).should().publishEvent(new BoormiRejectedDreamiEvent(offerId));
         then(matchingRepository).should(never()).save(any());
     }
 
@@ -467,7 +478,7 @@ BoormiServiceTest {
 
         assertThat(((BusinessException) thrown).getErrorCode())
                 .isEqualTo(OrderErrorCode.NOT_ORDER_OWNER);
-        then(matchingService).should(never()).rejectByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(BoormiRejectedDreamiEvent.class));
     }
 
     @Test
@@ -482,7 +493,7 @@ BoormiServiceTest {
 
         assertThat(((BusinessException) thrown).getErrorCode())
                 .isEqualTo(OrderErrorCode.CANNOT_CANCEL);
-        then(matchingService).should(never()).rejectByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(BoormiRejectedDreamiEvent.class));
     }
 
     @Test
@@ -499,6 +510,6 @@ BoormiServiceTest {
         assertThat(((BusinessException) thrown).getErrorCode())
                 .isEqualTo(MatchingErrorCode.NOT_OFFER_OWNER);
         assertThat(order.getOrderCd()).isEqualTo(OrderCd.PENDING_BOORMI_CONFIRMATION);
-        then(matchingService).should(never()).rejectByBoormi(any());
+        then(eventPublisher).should(never()).publishEvent(any(BoormiRejectedDreamiEvent.class));
     }
 }

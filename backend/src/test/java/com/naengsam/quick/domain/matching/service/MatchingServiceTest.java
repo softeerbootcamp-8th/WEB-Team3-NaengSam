@@ -12,7 +12,12 @@ import static org.mockito.Mockito.when;
 
 import com.naengsam.quick.domain.delivery.service.DeliveryService;
 import com.naengsam.quick.domain.matching.dto.GeoPoint;
+import com.naengsam.quick.domain.matching.event.BoormiConfirmedEvent;
+import com.naengsam.quick.domain.matching.event.BoormiRejectedDreamiEvent;
+import com.naengsam.quick.domain.matching.event.DreamiAcceptedEvent;
 import com.naengsam.quick.domain.matching.event.MatchingEventType;
+import com.naengsam.quick.domain.matching.event.MatchingStartRequestedEvent;
+import com.naengsam.quick.domain.matching.event.OrderCancelledByBoormiEvent;
 import com.naengsam.quick.domain.matching.model.MatchOffer;
 import com.naengsam.quick.domain.matching.model.MatchOfferStatus;
 import com.naengsam.quick.domain.matching.model.OrderOfferGroup;
@@ -1113,6 +1118,85 @@ class MatchingServiceTest {
         // then
         assertThat(result).isFalse();
         verify(matchingEngine, never()).submit(any());
+    }
+
+    @Test
+    void 부르미_확정_이벤트를_받으면_엔진_큐에_AcceptByBoormi_액션이_제출된다() {
+        // given
+        UUID offerId = UUID.randomUUID();
+
+        // when
+        matchingService.onBoormiConfirmed(new BoormiConfirmedEvent(offerId));
+
+        // then
+        ArgumentCaptor<Action> captor = ArgumentCaptor.forClass(Action.class);
+        verify(matchingEngine).submit(captor.capture());
+        assertThat(captor.getValue()).isInstanceOf(AcceptByBoormi.class);
+        assertThat(((AcceptByBoormi) captor.getValue()).offerId()).isEqualTo(offerId);
+    }
+
+    @Test
+    void 매칭시작_요청_이벤트를_받으면_엔진_큐에_StartMatching_액션이_제출된다() {
+        // given
+        Orders order = mock(Orders.class);
+        when(order.getOrderId()).thenReturn(UUID.randomUUID());
+
+        // when
+        matchingService.onMatchingStartRequested(new MatchingStartRequestedEvent(order));
+
+        // then
+        ArgumentCaptor<Action> captor = ArgumentCaptor.forClass(Action.class);
+        verify(matchingEngine).submit(captor.capture());
+        assertThat(captor.getValue()).isInstanceOf(StartMatching.class);
+        assertThat(((StartMatching) captor.getValue()).order()).isSameAs(order);
+    }
+
+    @Test
+    void 부르미_주문취소_이벤트를_받으면_엔진_큐에_CancelOrderByBoormi_액션이_제출된다() {
+        // given
+        UUID orderId = UUID.randomUUID();
+        OrderOfferGroup group =
+                new OrderOfferGroup(orderId, UUID.randomUUID(), mock(GeoPoint.class), List.of());
+        getOrderOfferGroups().put(orderId, group);
+
+        // when
+        matchingService.onOrderCancelledByBoormi(new OrderCancelledByBoormiEvent(orderId));
+
+        // then
+        ArgumentCaptor<Action> captor = ArgumentCaptor.forClass(Action.class);
+        verify(matchingEngine).submit(captor.capture());
+        assertThat(captor.getValue()).isInstanceOf(CancelOrderByBoormi.class);
+        assertThat(((CancelOrderByBoormi) captor.getValue()).orderId()).isEqualTo(orderId);
+    }
+
+    @Test
+    void 드리미_수락_이벤트를_받으면_엔진_큐에_AcceptByDreami_액션이_제출된다() {
+        // given
+        UUID offerId = UUID.randomUUID();
+
+        // when
+        matchingService.onDreamiAccepted(new DreamiAcceptedEvent(offerId));
+
+        // then
+        ArgumentCaptor<Action> captor = ArgumentCaptor.forClass(Action.class);
+        verify(matchingEngine).submit(captor.capture());
+        assertThat(captor.getValue()).isInstanceOf(AcceptByDreami.class);
+        assertThat(((AcceptByDreami) captor.getValue()).offerId()).isEqualTo(offerId);
+    }
+
+    @Test
+    void 부르미_거절_이벤트를_받으면_엔진_큐에_RejectByBoormi_액션이_제출된다() {
+        // given
+        UUID offerId = UUID.randomUUID();
+
+        // when
+        matchingService.onBoormiRejectedDreami(new BoormiRejectedDreamiEvent(offerId));
+
+        // then
+        ArgumentCaptor<Action> captor = ArgumentCaptor.forClass(Action.class);
+        verify(matchingEngine).submit(captor.capture());
+        assertThat(captor.getValue()).isInstanceOf(RejectByBoormi.class);
+        assertThat(((RejectByBoormi) captor.getValue()).offerId()).isEqualTo(offerId);
     }
 
     @Test
